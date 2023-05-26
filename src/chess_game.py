@@ -101,7 +101,7 @@ class ChessGame:
             return self.evaluate()
 
         if is_maximizing:
-            max_eval = float("-inf")
+            max_eval = checkmate_value
 
             for move in self.board.legal_moves:
                 self.board.push(move)
@@ -116,7 +116,7 @@ class ChessGame:
 
             return max_eval
         else:
-            min_eval = float("inf")
+            min_eval = checkmate_value
 
             for move in self.board.legal_moves:
                 self.board.push(move)
@@ -134,7 +134,13 @@ class ChessGame:
     def evaluate(self):
 
         score = 0
-
+        
+        if self.board.is_game_over():
+            if self.board.is_checkmate():
+                score = checkmate_value
+            # else: score = 0
+            return score
+        
         for square in chess.SQUARES:
             piece = self.board.piece_at(square)
 

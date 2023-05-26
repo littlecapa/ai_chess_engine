@@ -8,7 +8,11 @@ sys.path.append('..')
 from src.chess_game import ChessGame
 import chess
 
-FEN = "rnb1k2r/p5pp/2p4q/1p1p4/4p1nK/1B2P3/PPPP1PP1/RNBQ1R2 w - - 5 14"
+# Mate in Two:
+#FEN = "rnb1k2r/p5pp/2p4q/1p1p4/4p1nK/1B2P3/PPPP1PP1/RNBQ1R2 w - - 5 14"
+
+# Mate in One:
+FEN = "rnb1k2r/p5pp/2p4q/1p1p4/4p1n1/1B2P1K1/PPPP1PP1/RNBQ1R2 b - - 5 15"
 
 def main():
     
