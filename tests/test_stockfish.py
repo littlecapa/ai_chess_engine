@@ -15,11 +15,12 @@ def main():
     aichess = ChessGame(3)
     while True:
         if board.turn == chess.WHITE:
-            move = aichess.get_best_move()
+            eval, move = aichess.get_best_move()
+            logging.debug(eval)
         else:
             move = fish.get_best_move()
         logging.debug(move)
-        logging.debug(fish.get_moves())
+        #logging.debug(fish.get_moves())
         board.push(move)
         logging.debug(board.fen())
         fish.make_move(move)
