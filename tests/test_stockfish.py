@@ -27,7 +27,12 @@ def main():
         aichess.make_move(move)
         if board.is_game_over():
             break
-    print(chess.Board.variation_san(board.move_stack))
+    for i, move in enumerate(board.move_stack):
+        move_number = (i // 2) + 1
+        if i % 2 == 0:
+            print(f"{move_number}. {move}")
+        else:
+            print(f"    {move}")
         
     fish.quit()
 

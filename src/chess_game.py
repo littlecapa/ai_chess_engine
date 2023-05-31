@@ -117,6 +117,8 @@ class ChessGame:
             if self.logging:
                 self.ml.make_move(move)
             eval_score, _ = self.minimax(depth - 1, alpha, beta, not maximizing_player)
+            if eval_score == checkmate_value:
+                logger.debug(f"Move: {move} Scores: {eval_score}, {best_eval}, {alpha}, {beta}")
             self.board.pop()
             if self.logging:
                 self.ml.add_eval(eval_score)
@@ -143,7 +145,11 @@ class ChessGame:
         score = 0
         if self.board.is_game_over():
             if self.board.is_checkmate():
-                score = checkmate_value
+                logger.debug(f"Mate, Turn: {self.board.turn}")
+                if self.board.turn == chess.BLACK:
+                    score = checkmate_value
+                else:
+                    score = -checkmate_value
             # else: score = 0
             return score
         
