@@ -1,6 +1,8 @@
 import chess
 import torch
 import torch.nn as nn
+import numpy as np
+from src.libs.convert_lib import substitute_piece, int_tensor_to_bool, bool_to_int_tensor
 
 FILEPATH = "/Users/littlecapa/GIT/python/ai_chess_engine/model/nn"
 
@@ -8,43 +10,61 @@ class Chess_NN:
 
     def __init__(self):
         super(Chess_NN, self).__init__()
+        
+        #self.input_layer = nn.Linear(13, 128)
+        #self.hidden_layers = nn.ModuleList([nn.Linear(128, 128) for _ in range(4)])
+        #self.output_layer = nn.Linear(128, 1)
+        #self.relu = nn.ReLU()
+        self.optimizer = torch.optim.Adam
+        self.loss = nn.CrossEntropyLoss()
 
-        self.conv1 = nn.Conv2d(13, 64, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
-        self.conv4 = nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1)
-        self.conv5 = nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1)
-        self.conv6 = nn.Conv2d(128, 1, kernel_size=3, stride=1, padding=1)
-
-        self.fc1 = nn.Linear(64, 32)
-        self.fc2 = nn.Linear(32, 1)
-
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=2, stride=2)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=2, stride=2)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=2, stride=2)
+        self.flatten = nn.Flatten()
+        self.dense1 = nn.Linear(4096, 512)
+        self.dense2 = nn.Linear(512, 1)
+        self.sigmoid = nn.Sigmoid()
         self.relu = nn.ReLU()
-    
-    def save_model(self, filepath = FILEPATH):
-        torch.save(self.relu.state_dict(), filepath)
-
-    def load_model(self, filepath = FILEPATH):
-        self.relu.load_state_dict(torch.load(filepath))
 
     def forward(self, x):
-        x = self.relu(self.conv1(x))
-        x = self.relu(self.conv2(x))
-        x = self.relu(self.conv3(x))
-        x = self.relu(self.conv4(x))
-        x = self.relu(self.conv5(x))
-        x = self.relu(self.conv6(x))
+        x = x.view(-1, 1, 13, 1)  # Reshape input to match channel and height dimensions
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.relu(x)
+        x = self.conv3(x)
+        x = self.relu(x)
+        x = self.flatten(x)
+        x = self.dense1(x)
+        x = self.relu(x)
+        x = self.sigmoid(x)
+        output = self.dense2(x)
 
-        x = x.view(x.size(0), -1)  # Flatten the tensor
-        x = self.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
+        return output
+        #x = x.unsqueeze(0).float()
+        #x = self.input_layer(x)
+        #x = self.relu(x)
+        #
+        #for layer in self.hidden_layers:
+        #    x = layer(x)
+        #    x = self.relu(x)
+        #
+        #x = self.output_layer(x)
+        #x = torch.sigmoid(x)
+        #return x.item()
+    
+    def save_model(self):
+        torch.save(self, FILEPATH)
+
+    def load_model(self):
+        torch.load(self, FILEPATH)
 
     def board_to_tensor(_, board):
         
         # Initialize the tensor with zeros
-        tensor = torch.zeros((14, 8, 8), dtype=torch.bool)
-
+        # bool_tensor = torch.zeros((13, 8, 8), dtype=torch.bool)
+        bool_array = np.zeros((13, 8, 8), dtype=bool)
         # Iterate over the board and update the tensor
         for rank in range(8):
             for file in range(8):
@@ -55,60 +75,47 @@ class Chess_NN:
                     piece_type = piece.piece_type - 1
                     if piece.color == chess.BLACK:
                         piece_type += 6
-                    tensor[piece_type][rank][file] = True
+                    bool_array[piece_type][rank][file] = True
 
         # Encode the castling rights
         if board.castling_rights & chess.BB_H1:
-            tensor[12][0][0] = True
+            bool_array[12][0][0] = True
         if board.castling_rights & chess.BB_A1:
-            tensor[12][1][0] = True
+            bool_array[12][1][0] = True
         if board.castling_rights & chess.BB_H8:
-            tensor[12][2][0] = True
+            bool_array[12][2][0] = True
         if board.castling_rights & chess.BB_A8:
-            tensor[12][3][0] = True
+            bool_array[12][3][0] = True
 
         # Encode the turn
-        tensor[12][4][0] = board.turn
+        bool_array[12][4][0] = board.turn
+        # Missing: EP Field
         # 61 Bits remain unused
-
-        return tensor
+        int_tensor = bool_to_int_tensor(bool_array)
+        return int_tensor
     
-    def tensor_to_str(_, tensor):
+    def tensor_to_str(_, int_tensor):
 
-        def substitute_piece(string, position, piece):
-
-            def piece2char(piece):
-                piece_chars = {
-                    0: "P", 1: "N", 2: "B", 3: "R", 4: "Q", 5: "K", 
-                    6: "p", 7: "n", 8: "b", 9: "r", 10: "q", 11: "k"
-                }
-                return piece_chars.get(piece, " ")
-
-                
-            if position < 0 or position >= len(string):
-                return string  # Return the original string if position is out of range
-            else:
-                return string[:position] + piece2char(piece) + string[position+1:]
-
+        bool_array = int_tensor_to_bool(int_tensor)
         blank_string = " " * 8
         board_string = [blank_string] * 8
         for rank in range(8):
             for file in range(8):
                 for piece_type in range(12):
-                    if tensor[piece_type][rank][file]:
+                    if bool_array[piece_type][rank][file]:
                         board_string[rank] = substitute_piece(board_string[rank], file, piece_type)
         extra_string = ""
-        if tensor[12][4][0]:
+        if bool_array[12][4][0]:
             extra_string += "White "
         else:
             extra_string += "Black "
-        if tensor[12][0][0]:
+        if bool_array[12][0][0]:
             extra_string += "K"
-        if tensor[12][1][0]:
+        if bool_array[12][1][0]:
             extra_string += "Q"
-        if tensor[12][2][0]:
+        if bool_array[12][2][0]:
             extra_string += "k"
-        if tensor[12][3][0]:
+        if bool_array[12][3][0]:
             extra_string += "q"
         
         return_string = ""
@@ -120,5 +127,5 @@ class Chess_NN:
 
     def eval_board(self, board):
         tensor = self.board_to_tensor(board)
-        eval = self.forward(tensor.unsqueeze(0))
+        eval = self.forward(tensor)
         return eval

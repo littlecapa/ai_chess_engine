@@ -19,10 +19,10 @@ cnn.save_model()
 
 eval = cnn.eval_board(board)
 
-print(eval)
+print(f"Eval: {eval}")
 
 cnn.load_model()
 
 eval = cnn.eval_board(board)
 
-print(eval)
+print(f"Eval: {eval}")
