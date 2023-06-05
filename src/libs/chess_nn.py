@@ -6,60 +6,43 @@ from src.libs.convert_lib import substitute_piece, int_tensor_to_bool, bool_to_i
 
 FILEPATH = "/Users/littlecapa/GIT/python/ai_chess_engine/model/nn"
 
-class Chess_NN:
+class Chess_NN(nn.Module):
 
     def __init__(self):
         super(Chess_NN, self).__init__()
         
-        #self.input_layer = nn.Linear(13, 128)
-        #self.hidden_layers = nn.ModuleList([nn.Linear(128, 128) for _ in range(4)])
-        #self.output_layer = nn.Linear(128, 1)
-        #self.relu = nn.ReLU()
         self.optimizer = torch.optim.Adam
-        self.loss = nn.CrossEntropyLoss()
-
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=2, stride=2)
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=2, stride=2)
-        self.conv3 = nn.Conv2d(128, 256, kernel_size=2, stride=2)
-        self.flatten = nn.Flatten()
-        self.dense1 = nn.Linear(4096, 512)
-        self.dense2 = nn.Linear(512, 1)
-        self.sigmoid = nn.Sigmoid()
+        self.loss = nn.MSELoss()
+        
+        self.dense1 = nn.Linear(13, 64)
+        self.dense2 = nn.Linear(64, 128)
+        self.dense3 = nn.Linear(128, 256)
+        self.dense4 = nn.Linear(256, 128)
+        self.dense5 = nn.Linear(128, 64)
+        self.dense6 = nn.Linear(64, 1)
         self.relu = nn.ReLU()
-
+        
     def forward(self, x):
-        x = x.view(-1, 1, 13, 1)  # Reshape input to match channel and height dimensions
-        x = self.conv1(x)
+        x = self.dense1(x.float())
         x = self.relu(x)
-        x = self.conv2(x)
+        x = self.dense2(x)
         x = self.relu(x)
-        x = self.conv3(x)
+        x = self.dense3(x)
         x = self.relu(x)
-        x = self.flatten(x)
-        x = self.dense1(x)
+        x = self.dense4(x)
         x = self.relu(x)
-        x = self.sigmoid(x)
-        output = self.dense2(x)
-
+        x = self.dense5(x)
+        x = self.relu(x)
+        output = self.dense6(x)
+        
         return output
-        #x = x.unsqueeze(0).float()
-        #x = self.input_layer(x)
-        #x = self.relu(x)
-        #
-        #for layer in self.hidden_layers:
-        #    x = layer(x)
-        #    x = self.relu(x)
-        #
-        #x = self.output_layer(x)
-        #x = torch.sigmoid(x)
-        #return x.item()
     
-    def save_model(self, file_path):
-        torch.save(self, file_path)
+    def save_model(self):
+        torch.save(self, FILEPATH)
 
     @classmethod
-    def load_model(cls, file_path):
-        return torch.load(file_path)
+    def load_model(cls):
+        return torch.load(FILEPATH)
 
     def board_to_tensor(_, board):
         

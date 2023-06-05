@@ -17,12 +17,16 @@ print (cnn.tensor_to_str(tensor))
 
 cnn.save_model()
 
+print("First Eval)")
+
 eval = cnn.eval_board(board)
 
 print(f"Eval: {eval}")
 
-cnn.load_model()
+cnn = cnn.load_model()
 
 eval = cnn.eval_board(board)
+
+print("Scond Eval)")
 
 print(f"Eval: {eval}")

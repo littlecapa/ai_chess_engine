@@ -74,6 +74,8 @@ class ChessGame:
         eval, best_move = self.minimax(self.max_depth, -MIN_MAX_VALUE, MIN_MAX_VALUE,  True)
         return eval, best_move
     
+
+
     def evaluate_move(self, move):
         score = 0.0
 
