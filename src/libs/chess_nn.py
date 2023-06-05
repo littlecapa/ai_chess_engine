@@ -54,11 +54,12 @@ class Chess_NN:
         #x = torch.sigmoid(x)
         #return x.item()
     
-    def save_model(self):
-        torch.save(self, FILEPATH)
+    def save_model(self, file_path):
+        torch.save(self, file_path)
 
-    def load_model(self):
-        torch.load(self, FILEPATH)
+    @classmethod
+    def load_model(cls, file_path):
+        return torch.load(file_path)
 
     def board_to_tensor(_, board):
         
