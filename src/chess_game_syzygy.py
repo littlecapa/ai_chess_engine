@@ -1,51 +1,46 @@
 import chess
+import chess.syzygy
 
-import logging
-logger = logging.getLogger()
+from src.chess_game import ChessGame
 
-from src.libs.chess_lib import *
-
-import sys
-from chess_game import ChessGame
-
-# Specify the path to the local library/module
-library_path = "/Users/littlecapa/GIT/python/move_logger/src"
-
-# Add the library path to the system path
-sys.path.append(library_path)
-
-from logger import Move_Logger
 checkmate_value = 999.0
 
-SYZYGY_PATH = "/Users/littlecapa/chess/Syzygy"
+SYZYGY_PATH = "/Users/littlecapa/chess/syzygy"
 
 MAX_SYZYGY_PIECES = 5
 
 class ChessSyzygyGame(ChessGame):
 
     def __init__(self, max_depth=3, extra_depth_capture = 3):
-        super.__init__(self, max_depth, extra_depth_capture)
+        super().__init__(max_depth, extra_depth_capture)
         # Load the Tablebase
+        self.tablebases = chess.syzygy.Tablebase()
+        self.tablebases.add_directory(SYZYGY_PATH)
         
-    def evaluate(self):
-        score = 0
-        if self.board.is_game_over():
-            if self.board.is_checkmate():
-                logger.debug(f"Mate, Turn: {self.board.turn}")
-                if self.board.turn == chess.BLACK:
-                    score = checkmate_value
-                else:
-                    score = -checkmate_value
-            # else: score = 0
-            return score
-        
-        for square in chess.SQUARES:
-            piece = self.board.piece_at(square)
+    
+    def get_best_move(self):
 
-            if piece is not None:
-                if piece.color == chess.WHITE:
-                    score += piece_values.get(piece.piece_type, 0)
-                else:
-                    score -= piece_values.get(piece.piece_type, 0)
+        # Generate all legal moves
+        legal_moves = list(self.board.legal_moves)
+        print(self.board)
 
-        return score
+        # Initialize variables
+        best_move = None
+        shortest_distance = float('inf')
+
+        # Iterate through each legal move
+        for move in legal_moves:
+            # Make the move on a temporary board
+            temp_board = self.board.copy()
+            temp_board.push(move)
+
+            # Probe the table bases to get the distance to mate
+            distance = -self.tablebases.probe_dtz(temp_board)
+            print(f"Move: {move}, Distance: {distance}")
+
+            # Check if the distance is shorter than the current best distance
+            if distance is not None and distance > 0 and distance < shortest_distance:
+                shortest_distance = distance
+                best_move = move
+       
+        return shortest_distance, best_move
